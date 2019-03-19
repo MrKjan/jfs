@@ -160,7 +160,7 @@ int32_t write_file_name(char *path, struct JFile *meta)
 
 int fill_jfs_image(char *path, int32_t *fat, struct JSuper *sb, uint8_t *data, struct JFile *meta)
 {
-    ///init mateadata
+    ///init metadata
     meta->size = 0;
     meta->first_data_block_idx = -1;
     meta->flags = 1;
@@ -168,28 +168,11 @@ int fill_jfs_image(char *path, int32_t *fat, struct JSuper *sb, uint8_t *data, s
     //for debug
     //int32_t fat[BLOCKS_CNT] = (int32_t *)(sb+1);
 
-    char *slashp = strrchr(path, '/');
-    if (slashp-path == strlen(path) - 1) //TODO: Сделать по-человечески
+    int32_t ret = write_file_name(path, meta);
+    if (ret < 0)
     {
-        printf("Path shouldn't be ended with '/'!\n");
+        printf("Incorrect file name!\n");
         return -1;
-    }
-    if (NULL == slashp)
-        slashp = path;
-    else
-        slashp++;
-
-    if (strlen(path) - (slashp - path) > 63)
-    {
-        printf("Too long file name: %s", slashp);
-        return -1;
-    }
-    else
-    {
-        strcpy(meta->name, slashp);
-        //printf("meta name is: %s\n", meta->name);
-        for (int ii; ii<strlen(meta->name); ii++)
-            meta->name[ii] = tolower(meta->name[ii]); //TODO: have to be unique!
     }
 
     ///explore content
@@ -251,6 +234,7 @@ int fill_jfs_image(char *path, int32_t *fat, struct JSuper *sb, uint8_t *data, s
                 printf("Can't create new file!\n");
                 return -1;
             }
+            write_file_name(newp, new_file);
         }
         else
         {
