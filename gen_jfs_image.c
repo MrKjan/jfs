@@ -110,6 +110,55 @@ int create_jfs_image(char *name, char *inst_name, char *src_path, uint32_t block
     return 0;
 }
 
+int32_t write_file_name(char *path, struct JFile *meta)
+{
+    int32_t path_len = strlen(path);
+    int32_t begin = 0, end = path_len - 1;
+
+    /// get name
+    for (int ii=path_len; ii >= 0; ii--)
+    {
+        if (path[ii] == '/')
+        {
+            if (ii == path_len - 1)
+            {
+                end--;
+                continue;
+            }
+            else
+            {
+                begin = ii + 1;
+                break;
+            }
+        }
+    }
+
+    ///check
+    if (end - begin < 0)
+        return -1;
+
+    if (end - begin >= 64)
+        return -2;
+
+    ///copy
+    for (int ii = begin; ii<=end; ii++)
+    {
+        meta->name[ii - begin] = path[ii];
+    }
+    meta->name[begin - end + 1] = '\0';
+
+    ///tolower
+    for (int ii; ii<strlen(meta->name); ii++)
+        meta->name[ii] = tolower(meta->name[ii]);
+
+    ///Check unique?
+    //TODO
+
+    //printf("%s\n",  meta->name);
+
+    return 0;
+}
+
 int fill_jfs_image(char *path, int32_t *fat, struct JSuper *sb, uint8_t *data, struct JFile *meta)
 {
     ///init mateadata
@@ -197,12 +246,12 @@ int fill_jfs_image(char *path, int32_t *fat, struct JSuper *sb, uint8_t *data, s
         else if (S_ISREG(buf.st_mode))
         {
             printf("handle file: '%s'\n", newp);
-            struct JFile *new_file = jfs_create_file(meta, sb, NULL, 0);
+            /*struct JFile *new_file = jfs_create_file(meta, sb, NULL, 0);
             if (NULL == new_file)
             {
                 printf("Can't create new file!\n");
                 return -1;
-            }
+            }*/
         }
         else
         {

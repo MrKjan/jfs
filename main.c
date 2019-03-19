@@ -5,6 +5,9 @@
 
 int main(int argc, char **argv)
 {
+    //struct JFile tmp;
+    //int ret = write_file_name("/ReturN/", NULL, &tmp);
+    //printf("%d\n", ret);
     /*int ret = */create_jfs_image("fs_files/jfs_instance", "jfs", "data", BLOCK_SIZE, BLOCKS_CNT);
 
     //~ printf("%d\n", files_of_dir("data"));

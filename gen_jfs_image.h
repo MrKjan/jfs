@@ -22,7 +22,7 @@ struct Dir_explore explore_dir(char *pth, uint32_t block_size);
 uint32_t blocks_of_dir(uint32_t block_size, uint32_t files_cnt);
 uint32_t files_of_dir(char *name);
 int fill_jfs_image(char *path, int32_t *fat, struct JSuper *sb, uint8_t *data, struct JFile *meta);
-//int32_t check_file_name(char *path, struct JSuper *sb, struct JFile *meta);
+int32_t write_file_name(char *path, struct JFile *meta);
 
 #endif
 
