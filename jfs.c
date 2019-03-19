@@ -123,7 +123,7 @@ struct JFile *jfs_get_children_dir(struct JFile parent, struct JSuper *sb, char 
     return NULL;
 }
 
-int32_t jfs_read_dir(struct JFile *dir, struct JSuper *sb, uint32_t offset, char *ret, uint8_t *type)
+int32_t jfs_read_dir(struct JFile *dir, struct JSuper *sb, uint32_t offset, struct JFile **ret)
 {
     int32_t block_pos = dir->first_data_block_idx;
     int32_t loop_offset = 0;
@@ -131,8 +131,7 @@ int32_t jfs_read_dir(struct JFile *dir, struct JSuper *sb, uint32_t offset, char
 
     if (offset >= dir->size)
     {
-        strcpy(ret, "\0");
-        *type = 0;
+        *ret = NULL;
         return 0;
     }
 
@@ -146,8 +145,8 @@ int32_t jfs_read_dir(struct JFile *dir, struct JSuper *sb, uint32_t offset, char
                           block_pos * sb->block_size +
                           (offset - loop_offset) * sizeof(struct JFile);
 
-    strcpy(ret, ((struct JFile *)global_pos)->name);
-    *type = ((struct JFile *)global_pos)->flags;
+
+    *ret = (struct JFile *)global_pos;
 
     return 0;
 }

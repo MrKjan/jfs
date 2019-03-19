@@ -92,13 +92,12 @@ int create_jfs_image(char *name, char *inst_name, char *src_path, uint32_t block
         return -1;
     }
 
-    char subdir_name[64];
+    struct JFile *subdir;
     int32_t offset = 0;
-    uint8_t type;
 
-    while (!jfs_read_dir(jfs_get_root_dir(super_block), super_block, offset, subdir_name, &type) && strlen(subdir_name) > 0)
+    while (!jfs_read_dir(jfs_get_root_dir(super_block), super_block, offset, &subdir) && NULL != subdir)
     {
-        printf("Name: %s, offset: %lu, type: %d\n", subdir_name, offset, type);
+        printf("Name: %s, offset: %lu, type: %d\n", subdir->name, offset, subdir->flags);
         offset++;
     }
 
@@ -246,12 +245,12 @@ int fill_jfs_image(char *path, int32_t *fat, struct JSuper *sb, uint8_t *data, s
         else if (S_ISREG(buf.st_mode))
         {
             printf("handle file: '%s'\n", newp);
-            /*struct JFile *new_file = jfs_create_file(meta, sb, NULL, 0);
+            struct JFile *new_file = jfs_create_file(meta, sb, NULL, 0);
             if (NULL == new_file)
             {
                 printf("Can't create new file!\n");
                 return -1;
-            }*/
+            }
         }
         else
         {

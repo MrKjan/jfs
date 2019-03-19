@@ -41,7 +41,7 @@ struct JFile *jfs_create_file(struct JFile *parent, struct JSuper *sb, char *nam
 int32_t jfs_write_file(struct JFile *flie, struct JSuper *sb, uint32_t offset, char *data, uint32_t data_size);
 int32_t *jfs_get_fat_ptr(struct JSuper *sb);
 uint8_t *jfs_get_data_ptr(struct JSuper *sb);
-int32_t jfs_read_dir(struct JFile *dir, struct JSuper *sb, uint32_t offset, char *ret, uint8_t *type);
+int32_t jfs_read_dir(struct JFile *dir, struct JSuper *sb, uint32_t offset, struct JFile **ret);
 struct JFile *jfs_get_root_dir(struct JSuper *sb);
 struct JFile *jfs_get_children_dir(struct JFile parent, struct JSuper *sb, char *name);
 int32_t jfs_files_fit_in_block(struct JSuper *sb);
