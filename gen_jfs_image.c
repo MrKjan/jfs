@@ -233,13 +233,37 @@ int fill_jfs_image(char *path, int32_t *fat, struct JSuper *sb, uint8_t *data, s
                 printf("Can't create new file!\n");
                 return -1;
             }
+
             write_file_name(newp, new_file);
-            int ret = jfs_write_file(new_file, sb, 0, NULL, 0);
-            if (ret < 0)
+
+            uint8_t *data = malloc(sb->block_size * sizeof(uint8_t));
+            if (NULL == data)
             {
-                printf("Can't write file data!\n");
+                printf("Can't alloc memory for file input!\n");
                 return -1;
             }
+            size_t ret_read;
+            uint32_t was_written = 0;
+            FILE *input_file = fopen(newp, "rb");
+            if (NULL == input_file)
+            {
+                printf("Can't open data file!\n");
+                free(data);
+                return -1;
+            }
+
+            while ((ret_read = fread(data, sizeof(uint8_t), sb->block_size, input_file)))
+            {
+                int ret = jfs_write_file(new_file, sb, was_written, data, ret_read);//(new_file, sb, 0, NULL, 0);
+                if (ret < 0)
+                {
+                    printf("Can't write file data!\n");
+                    free(data);
+                    return -1;
+                }
+                was_written += ret_read;
+            }
+            free(data);
         }
         else
         {

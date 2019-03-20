@@ -150,7 +150,7 @@ int32_t jfs_read_dir(struct JFile *dir, struct JSuper *sb, uint32_t offset, stru
     return 0;
 }
 
-int32_t jfs_write_file(struct JFile *file, struct JSuper *sb, uint32_t offset, char *data, uint32_t data_size)
+int32_t jfs_write_file(struct JFile *file, struct JSuper *sb, uint32_t offset, uint8_t *data, uint32_t data_size)
 {
     printf("\tWrite file %s!\n", file->name);
     int32_t *fat = jfs_get_fat_ptr(sb);
@@ -247,10 +247,17 @@ int32_t jfs_write_file(struct JFile *file, struct JSuper *sb, uint32_t offset, c
             memcpy(write_ptr, data - cnt_to_write + data_size, write_in_block);
             write_ptr += write_in_block;
             cnt_to_write -= write_in_block;
+            file->size += write_in_block;
         }
     }
 
     return ret;
+}
+
+int32_t jfs_read_file(struct JFile *file, struct JSuper *sb, uint32_t offset, uint8_t *dst, uint32_t size, uint32_t *ret_size)
+{
+
+    return 0;
 }
 
 //TODO: should be implemented other way, if another flags fill appear
