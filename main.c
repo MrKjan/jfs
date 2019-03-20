@@ -3,6 +3,8 @@
 #include "gen_jfs_image.h"
 #include <stdint.h>
 
+//TODO: Don't forget about endian!
+
 int main(int argc, char **argv)
 {
     //struct JFile tmp;

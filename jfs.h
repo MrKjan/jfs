@@ -37,14 +37,17 @@ struct JSuper
 
 int32_t jfs_get_free_block(int32_t *fat, struct JSuper *sb);
 void jfs_return_free_block(int32_t *fat, struct JSuper *sb, int32_t free_block);
+void jfs_add_new_block(struct JFile *file, struct JSuper *sb, int32_t new_block_idx);
 struct JFile *jfs_create_file(struct JFile *parent, struct JSuper *sb, char *name, uint8_t flags);
-int32_t jfs_write_file(struct JFile *flie, struct JSuper *sb, uint32_t offset, char *data, uint32_t data_size);
+int32_t jfs_write_file(struct JFile *file, struct JSuper *sb, uint32_t offset, char *data, uint32_t data_size);
 int32_t *jfs_get_fat_ptr(struct JSuper *sb);
 uint8_t *jfs_get_data_ptr(struct JSuper *sb);
+uint8_t *jfs_block_idx_to_ptr(int32_t block_idx, struct JSuper *sb);
 int32_t jfs_read_dir(struct JFile *dir, struct JSuper *sb, uint32_t offset, struct JFile **ret);
 struct JFile *jfs_get_root_dir(struct JSuper *sb);
-struct JFile *jfs_get_children_dir(struct JFile parent, struct JSuper *sb, char *name);
 int32_t jfs_files_fit_in_block(struct JSuper *sb);
+int8_t jfs_is_dir(struct JFile *file);
+int8_t jfs_is_file(struct JFile *file);
 
 
 //TODO: Delete when merge with Jetos

@@ -97,7 +97,7 @@ int create_jfs_image(char *name, char *inst_name, char *src_path, uint32_t block
 
     while (!jfs_read_dir(jfs_get_root_dir(super_block), super_block, offset, &subdir) && NULL != subdir)
     {
-        printf("Name: %s, offset: %lu, type: %d\n", subdir->name, offset, subdir->flags);
+        printf("Name: %s, offset: %d, type: %d\n", subdir->name, offset, subdir->flags);
         offset++;
     }
 
@@ -115,7 +115,7 @@ int32_t write_file_name(char *path, struct JFile *meta)
     int32_t begin = 0, end = path_len - 1;
 
     /// get name
-    for (int ii=path_len; ii >= 0; ii--)
+    for (int ii = path_len; ii >= 0; ii--)
     {
         if (path[ii] == '/')
         {
@@ -211,11 +211,10 @@ int fill_jfs_image(char *path, int32_t *fat, struct JSuper *sb, uint8_t *data, s
         }
 
         ///process child
-        if (S_ISDIR(buf.st_mode))
+        if (S_ISDIR(buf.st_mode)) ///Directory
         {
             int ret = -1;
             printf("handle dir:  '%s'\n", newp);
-            //jfs_create_file(meta, files->d_name, uint32_t size, int32_t first_data_block_idx, uint8_t flags)
             struct JFile *new_dir = jfs_create_file(meta, sb, NULL, 1); //name will be filled later
             if (new_dir != NULL)
                 ret = fill_jfs_image(newp, fat, sb, data, new_dir);
@@ -225,7 +224,7 @@ int fill_jfs_image(char *path, int32_t *fat, struct JSuper *sb, uint8_t *data, s
                 return -1;
             }
         }
-        else if (S_ISREG(buf.st_mode))
+        else if (S_ISREG(buf.st_mode)) ///File
         {
             printf("handle file: '%s'\n", newp);
             struct JFile *new_file = jfs_create_file(meta, sb, NULL, 0);
@@ -235,6 +234,12 @@ int fill_jfs_image(char *path, int32_t *fat, struct JSuper *sb, uint8_t *data, s
                 return -1;
             }
             write_file_name(newp, new_file);
+            int ret = jfs_write_file(new_file, sb, 0, NULL, 0);
+            if (ret < 0)
+            {
+                printf("Can't write file data!\n");
+                return -1;
+            }
         }
         else
         {
