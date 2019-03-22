@@ -258,7 +258,8 @@ int32_t jfs_read_file(struct JFile *file, struct JSuper *sb, uint32_t offset, ui
 {
     int32_t *fat = jfs_get_fat_ptr(sb);
     int32_t block = file->first_data_block_idx;
-    uint32_t ii;
+    uint32_t offset_block = 0;
+    uint32_t read = 0;
 
     if (offset >= file->size)
     {
@@ -267,11 +268,64 @@ int32_t jfs_read_file(struct JFile *file, struct JSuper *sb, uint32_t offset, ui
         return 0;
     }
 
-    for (ii = offset; ii < sb->block_size; ii -= sb->block_size)
+    for (offset_block = offset; offset_block >= sb->block_size; offset_block -= sb->block_size)
     {
         block = fat[block];
-
     }
+
+    size = size >= file->size - offset ? file->size - offset : size;
+
+    for (;size > 0;)
+    {
+        uint32_t read_from_block = sb->block_size - offset_block > size ? size : sb->block_size - offset_block;
+        memcpy(dst + read, jfs_block_idx_to_ptr(block, sb) + offset_block, read_from_block);
+        size -= read_from_block;
+        read += read_from_block;
+        block = fat[block];
+        offset_block = 0;
+    }
+
+    *ret_size = read;
+    return 0;
+}
+
+int32_t jfs_resize_file(struct JFile *file, struct JSuper *sb, uint32_t new_size)
+{
+/*    int32_t *fat = jfs_get_fat_ptr(sb);
+
+    if (new_size == file->size)
+    {
+        return 0;
+    }
+    else if (new_size > file->size)
+    {
+        uint32_t fill_size = new_size - file->size;
+        uint32_t offset = file->size;
+        int32_t block = file->first_data_block_idx;
+
+        while (offset >= sb->block_size)
+        {
+            block = fat[block]
+            offset -= sb->block_size;
+        }
+    }
+    else
+    {
+        //TODO
+    }*/
+
+    return 0;
+}
+
+int32_t jfs_rename_file(struct JFile *file, struct JSuper *sb, char *new_name)
+{
+    if (strlen(new_name) >= 64 || strlen(new_name) <= 0)
+    {
+        //printf("Incorrect new name!\n");
+        return -1;
+    }
+
+    strcpy(file->name, new_name);
 
     return 0;
 }

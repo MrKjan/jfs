@@ -49,6 +49,8 @@ int8_t jfs_is_dir(struct JFile *file);
 int8_t jfs_is_file(struct JFile *file);
 int32_t jfs_write_file(struct JFile *file, struct JSuper *sb, uint32_t offset, uint8_t *data, uint32_t data_size);
 int32_t jfs_read_file(struct JFile *file, struct JSuper *sb, uint32_t offset, uint8_t *dst, uint32_t size, uint32_t *ret_size);
+int32_t jfs_rename_file(struct JFile *file, struct JSuper *sb, char *new_name);
+int32_t jfs_resize_file(struct JFile *file, struct JSuper *sb, uint32_t new_size);
 
 //TODO: Delete when merge with Jetos
 #ifndef FS_H

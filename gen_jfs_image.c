@@ -138,6 +138,7 @@ void explore_image(struct JFile *file, struct JSuper *sb)
         {
             for (int32_t ii = 0; ii < file->size; ii++)
                 printf("%c", read_data[ii]);
+            printf("\n");
         }
         free(read_data);
     }
@@ -145,6 +146,7 @@ void explore_image(struct JFile *file, struct JSuper *sb)
     return;
 }
 
+//TODO: Check unique, check correctness
 int32_t write_file_name(char *path, struct JFile *meta)
 {
     int32_t path_len = strlen(path);
@@ -185,9 +187,6 @@ int32_t write_file_name(char *path, struct JFile *meta)
     ///tolower
     for (int ii; ii<strlen(meta->name); ii++)
         meta->name[ii] = tolower(meta->name[ii]);
-
-    ///Check unique?
-    //TODO
 
     //printf("%s\n",  meta->name);
 
