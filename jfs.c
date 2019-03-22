@@ -256,6 +256,22 @@ int32_t jfs_write_file(struct JFile *file, struct JSuper *sb, uint32_t offset, u
 
 int32_t jfs_read_file(struct JFile *file, struct JSuper *sb, uint32_t offset, uint8_t *dst, uint32_t size, uint32_t *ret_size)
 {
+    int32_t *fat = jfs_get_fat_ptr(sb);
+    int32_t block = file->first_data_block_idx;
+    uint32_t ii;
+
+    if (offset >= file->size)
+    {
+        if (NULL != ret_size)
+            *ret_size = 0;
+        return 0;
+    }
+
+    for (ii = offset; ii < sb->block_size; ii -= sb->block_size)
+    {
+        block = fat[block];
+
+    }
 
     return 0;
 }

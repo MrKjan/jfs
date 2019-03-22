@@ -10,6 +10,11 @@
 
 //TODO: Use inst_name
 
+//To check data:
+//*(fat+)
+//*((struct JFile *)(data_blocks + 128*))
+//((char *)(data_blocks + 128*))
+
 int create_jfs_image(char *name, char *inst_name, char *src_path, uint32_t block_size, uint32_t data_blocks_count)
 {
     FILE *jfs_image;
@@ -51,7 +56,7 @@ int create_jfs_image(char *name, char *inst_name, char *src_path, uint32_t block
     super_block->system_bytes = system_data_size;
     super_block->total_bytes = data_blocks_count*block_size + system_data_size;
 
-    //FAT
+    ///FAT
     for (int ii=0; ii<(int)(data_blocks_count-1); ii++)
     {
         fat[ii] = ii + 1;
@@ -92,14 +97,7 @@ int create_jfs_image(char *name, char *inst_name, char *src_path, uint32_t block
         return -1;
     }
 
-    struct JFile *subdir;
-    int32_t offset = 0;
-
-    while (!jfs_read_dir(jfs_get_root_dir(super_block), super_block, offset, &subdir) && NULL != subdir)
-    {
-        printf("Name: %s, offset: %d, type: %d\n", subdir->name, offset, subdir->flags);
-        offset++;
-    }
+    explore_image(jfs_get_root_dir(super_block), super_block);
 
     //printf("System data size: %d\nJSuper block size: %d\n", system_data_size, sizeof(struct JSuper));
     //hexdump(system_data, system_data_size);
@@ -107,6 +105,44 @@ int create_jfs_image(char *name, char *inst_name, char *src_path, uint32_t block
     free(system_data);
     fclose(jfs_image);
     return 0;
+}
+
+void explore_image(struct JFile *file, struct JSuper *sb)
+{
+    if (file->flags)
+    {
+        struct JFile *subdir;
+        int32_t offset = 0;
+        while (!jfs_read_dir(file, sb, offset, &subdir) && NULL != subdir)
+        {
+            printf("Name: %s, offset: %d, type: %d, size: %d\n", subdir->name, offset, subdir->flags, subdir->size);
+            explore_image(subdir, sb);
+            offset++;
+        }
+    }
+    else
+    {
+        uint8_t *read_data = malloc(file->size);
+        if (NULL == read_data)
+        {
+            printf("Cant't read file!\n");
+            return;
+        }
+        uint32_t read_count = 0;
+        jfs_read_file(file, sb, 0, read_data, file->size, &read_count);
+        if (0 == read_count)
+        {
+            printf("Nothing was read!\n");
+        }
+        else
+        {
+            for (int32_t ii = 0; ii < file->size; ii++)
+                printf("%c", read_data[ii]);
+        }
+        free(read_data);
+    }
+
+    return;
 }
 
 int32_t write_file_name(char *path, struct JFile *meta)
