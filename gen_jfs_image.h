@@ -4,8 +4,8 @@
 #include <stdint.h>
 #include "jfs.h"
 
-#define BLOCK_SIZE 76
-#define BLOCKS_CNT 20
+#define BLOCK_SIZE 256
+#define BLOCKS_CNT 40
 
 struct Dir_explore
 {

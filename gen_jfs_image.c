@@ -182,7 +182,7 @@ int32_t write_file_name(char *path, struct JFile *meta)
     {
         meta->name[ii - begin] = path[ii];
     }
-    meta->name[begin - end + 1] = '\0';
+    meta->name[end - begin + 1] = '\0';
 
     ///tolower
     for (int ii; ii<strlen(meta->name); ii++)
