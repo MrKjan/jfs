@@ -14,7 +14,7 @@ int32_t jfs_get_free_block(int32_t *fat, struct JSuper *sb)
 
 void jfs_return_free_block(struct JSuper *sb, int32_t free_block)
 {
-    int32_t fat = jfs_get_fat_ptr(sb);
+    int32_t *fat = jfs_get_fat_ptr(sb);
 
     fat[free_block] = sb->first_free_block;
     sb->first_free_block = free_block;
@@ -62,7 +62,7 @@ void jfs_add_new_block(struct JFile *file, struct JSuper *sb, int32_t new_block_
 
     return;
 }
-
+// *((struct JFile *)(data_blocks + sizeof(struct JFile)*0))
 struct JFile *jfs_create_file(struct JFile *parent, struct JSuper *sb, char *name, uint8_t flags)
 {
     uint8_t *where_to_add = NULL; //В какое место добавить новую запись
@@ -92,7 +92,7 @@ struct JFile *jfs_create_file(struct JFile *parent, struct JSuper *sb, char *nam
     {
         int32_t last_file_block = parent->first_data_block_idx;
 
-        while (last_file_block != -1)
+        while (-1 != fat[last_file_block])
         {
             last_file_block = fat[last_file_block];
         }

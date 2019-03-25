@@ -12,7 +12,7 @@
 
 //To check data:
 //*(fat+)
-//*((struct JFile *)(data_blocks + 128*))
+//*((struct JFile *)(data_blocks + BLOCK_SIZE*0 + sizeof(struct JFile)*))
 //((char *)(data_blocks + 128*))
 
 int create_jfs_image(char *name, char *inst_name, char *src_path, uint32_t block_size, uint32_t data_blocks_count)

@@ -42,7 +42,7 @@ struct JCoord
     uint32_t my_jfile_offset;
     int32_t parent_jfile_block;
     uint32_t parent_jfile_offset;
-}
+};
 
 int32_t jfs_get_free_block(int32_t *fat, struct JSuper *sb);
 void jfs_return_free_block(struct JSuper *sb, int32_t free_block);
