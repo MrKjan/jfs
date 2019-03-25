@@ -12,8 +12,10 @@ int32_t jfs_get_free_block(int32_t *fat, struct JSuper *sb)
     return ret;
 }
 
-void jfs_return_free_block(int32_t *fat, struct JSuper *sb, int32_t free_block)
+void jfs_return_free_block(struct JSuper *sb, int32_t free_block)
 {
+    int32_t fat = jfs_get_fat_ptr(sb);
+
     fat[free_block] = sb->first_free_block;
     sb->first_free_block = free_block;
 }
@@ -246,7 +248,7 @@ int32_t jfs_write_file(struct JFile *file, struct JSuper *sb, uint32_t offset, u
 
             if (NULL == data)
             {
-                memset(write_ptr, '\0', write_in_block);
+                memset(write_ptr, FILL_CHAR, write_in_block);
             }
             else
             {
@@ -296,7 +298,6 @@ int32_t jfs_read_file(struct JFile *file, struct JSuper *sb, uint32_t offset, ui
     return 0;
 }
 
-//TODO
 int32_t jfs_resize_file(struct JFile *file, struct JSuper *sb, uint32_t new_size)
 {
     int32_t *fat = jfs_get_fat_ptr(sb);
@@ -319,7 +320,39 @@ int32_t jfs_resize_file(struct JFile *file, struct JSuper *sb, uint32_t new_size
     }
     else ///Smaller size
     {
-        //TODO
+        int32_t block = file->first_data_block_idx;
+        uint32_t ii = 0;
+
+        while (new_size - ii > sb->block_size)
+        {
+            block = fat[block];
+
+            ii += sb->block_size;
+        }
+
+        //uint32_t offset = new_size % sb->block_size ? sb->block_size : new_size % sb->block_size;
+        //memset(jfs_block_idx_to_ptr(block) + offset, FILL_CHAR, sb->block_size - offset);
+
+        if (-1 == fat[block]) ///Only last block is resized
+        {
+            file->size = new_size;
+            return 0;
+        }
+
+        int32_t last_block = block;
+        block = fat[block];
+
+        do
+        {
+            int32_t block_to_remove = block;
+            block = fat[block];
+            jfs_return_free_block(sb, block_to_remove);
+        }
+        while (-1 != block);
+
+        fat[last_block] = -1;
+
+        file->size = new_size;
     }
 
     return 0;

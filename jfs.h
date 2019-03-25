@@ -5,6 +5,7 @@
 
 #define JFS_FILE_NAME_SIZE  64
 #define JFS_FAT_EOF         -1
+#define FILL_CHAR           '\0'
 //#define JFS_BLOCK_SIZE 128
 
 enum JFileType
@@ -35,8 +36,16 @@ struct JSuper
     struct JFile root;
 };
 
+struct JCoord
+{
+    int32_t my_jfile_block;
+    uint32_t my_jfile_offset;
+    int32_t parent_jfile_block;
+    uint32_t parent_jfile_offset;
+}
+
 int32_t jfs_get_free_block(int32_t *fat, struct JSuper *sb);
-void jfs_return_free_block(int32_t *fat, struct JSuper *sb, int32_t free_block);
+void jfs_return_free_block(struct JSuper *sb, int32_t free_block);
 void jfs_add_new_block(struct JFile *file, struct JSuper *sb, int32_t new_block_idx);
 struct JFile *jfs_create_file(struct JFile *parent, struct JSuper *sb, char *name, uint8_t flags);
 int32_t *jfs_get_fat_ptr(struct JSuper *sb);
