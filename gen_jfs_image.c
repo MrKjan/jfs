@@ -246,7 +246,7 @@ int fill_jfs_image(char *path, int32_t *fat, struct JSuper *sb, uint8_t *data, s
         }
 
         ///process child
-        if (S_ISDIR(buf.st_mode)) ///Directory
+        if (S_ISDIR(buf.st_mode)) ///Is directory
         {
             int ret = -1;
             printf("handle dir:  '%s'\n", newp);
@@ -259,7 +259,7 @@ int fill_jfs_image(char *path, int32_t *fat, struct JSuper *sb, uint8_t *data, s
                 return -1;
             }
         }
-        else if (S_ISREG(buf.st_mode)) ///File
+        else if (S_ISREG(buf.st_mode)) ///Is file
         {
             printf("handle file: '%s'\n", newp);
             struct JFile *new_file = jfs_create_file(meta, sb, NULL, 0);

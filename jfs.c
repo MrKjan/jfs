@@ -244,7 +244,14 @@ int32_t jfs_write_file(struct JFile *file, struct JSuper *sb, uint32_t offset, u
             uint32_t left_in_block = sb->block_size - (write_ptr - jfs_block_idx_to_ptr(curr_block, sb));
             uint32_t write_in_block = cnt_to_write > left_in_block ? left_in_block : cnt_to_write;
 
-            memcpy(write_ptr, data - cnt_to_write + data_size, write_in_block);
+            if (NULL == data)
+            {
+                memset(write_ptr, '\0', write_in_block);
+            }
+            else
+            {
+                memcpy(write_ptr, data - cnt_to_write + data_size, write_in_block);
+            }
             write_ptr += write_in_block;
             cnt_to_write -= write_in_block;
             file->size += write_in_block;
@@ -289,30 +296,31 @@ int32_t jfs_read_file(struct JFile *file, struct JSuper *sb, uint32_t offset, ui
     return 0;
 }
 
+//TODO
 int32_t jfs_resize_file(struct JFile *file, struct JSuper *sb, uint32_t new_size)
 {
-/*    int32_t *fat = jfs_get_fat_ptr(sb);
+    int32_t *fat = jfs_get_fat_ptr(sb);
+    ///Error handle
+    if (!jfs_is_file(file))
+    {
+        printf("Eww, it is not a file!\n");
+        return -1;
+    }
 
-    if (new_size == file->size)
+    if (new_size == file->size) ///Same size
     {
         return 0;
     }
-    else if (new_size > file->size)
+    else if (new_size > file->size) ///Bigger size
     {
         uint32_t fill_size = new_size - file->size;
-        uint32_t offset = file->size;
-        int32_t block = file->first_data_block_idx;
 
-        while (offset >= sb->block_size)
-        {
-            block = fat[block]
-            offset -= sb->block_size;
-        }
+        jfs_write_file(file, sb, file->size, NULL, fill_size);
     }
-    else
+    else ///Smaller size
     {
         //TODO
-    }*/
+    }
 
     return 0;
 }
