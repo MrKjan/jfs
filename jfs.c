@@ -67,6 +67,8 @@ struct JFile *jfs_create_file(struct JFile *parent, struct JSuper *sb, char *nam
 {
     uint8_t *where_to_add = NULL; //В какое место добавить новую запись
     int32_t *fat = jfs_get_fat_ptr(sb);
+    int32_t block;
+    uint32_t offset;
 
     int32_t files_fit_in_block = jfs_files_fit_in_block(sb);
     if (0 == files_fit_in_block)
@@ -86,6 +88,9 @@ struct JFile *jfs_create_file(struct JFile *parent, struct JSuper *sb, char *nam
 
         jfs_add_new_block(parent, sb, new_block);
 
+        block = new_block;
+        offset = 0;
+
         where_to_add = jfs_get_data_ptr(sb) + new_block * sb->block_size;
     }
     else //last block has enough free space
@@ -96,6 +101,9 @@ struct JFile *jfs_create_file(struct JFile *parent, struct JSuper *sb, char *nam
         {
             last_file_block = fat[last_file_block];
         }
+
+        block = last_file_block;
+        offset = parent->size % files_fit_in_block;
 
         where_to_add = jfs_get_data_ptr(sb) + last_file_block * sb->block_size +
                        (parent->size % files_fit_in_block) * sizeof(struct JFile);
@@ -113,6 +121,10 @@ struct JFile *jfs_create_file(struct JFile *parent, struct JSuper *sb, char *nam
     new_file->size = 0;
     new_file->first_data_block_idx = -1;
     new_file->flags = flags;
+    new_file->coord.my_jfile_block = block;
+    new_file->coord.my_jfile_offset = offset;
+    new_file->coord.parent_jfile_block = parent->coord.my_jfile_block;
+    new_file->coord.parent_jfile_offset = parent->coord.my_jfile_offset;
 
     parent->size++;
 

@@ -20,7 +20,7 @@ int create_jfs_image(char *name, char *inst_name, char *src_path, uint32_t block
     FILE *jfs_image;
     uint8_t *data_blocks, *system_data;
     uint32_t system_data_size, data_blocks_size;
-    struct JSuper *super_block;
+    struct JSuper *sb;
     int32_t *fat;
 
     size_t write_size;
@@ -45,16 +45,16 @@ int create_jfs_image(char *name, char *inst_name, char *src_path, uint32_t block
         return -1;
     }
 
-    super_block = (struct JSuper *)system_data;
+    sb = (struct JSuper *)system_data;
     fat = (int32_t *)(system_data + sizeof(struct JSuper));
     data_blocks = system_data + system_data_size;
 
     ///init
     //superblock
-    super_block->block_size = block_size;
-    super_block->blocks_count = data_blocks_count;
-    super_block->system_bytes = system_data_size;
-    super_block->total_bytes = data_blocks_count*block_size + system_data_size;
+    sb->block_size = block_size;
+    sb->blocks_count = data_blocks_count;
+    sb->system_bytes = system_data_size;
+    sb->total_bytes = data_blocks_count*block_size + system_data_size;
 
     ///FAT
     for (int ii=0; ii<(int)(data_blocks_count-1); ii++)
@@ -62,17 +62,21 @@ int create_jfs_image(char *name, char *inst_name, char *src_path, uint32_t block
         fat[ii] = ii + 1;
     }
     fat[data_blocks_count-1] = -1; // -1 is for no next
-    super_block->first_free_block = 0;
+    sb->first_free_block = 0;
 
     //Root
-    //int32_t root_block = get_free_block(fat, super_block);
-    //strcpy(super_block->root.name, inst_name);
-    //super_block->root.size = files_of_dir(name);
-    //super_block->root.first_data_block_idx = 0;
-    //super_block->root.flags = 1;
+    //int32_t root_block = get_free_block(fat, sb);
+    //strcpy(sb->root.name, inst_name);
+    //sb->root.size = files_of_dir(name);
+    //sb->root.first_data_block_idx = 0;
+    //sb->root.flags = 1;
+    sb->root.coord.my_jfile_block = -1;
+    sb->root.coord.my_jfile_offset = 0;
+    sb->root.coord.parent_jfile_block = -1;
+    sb->root.coord.parent_jfile_offset = 0;
 
     ///fill
-    int32_t ret = fill_jfs_image(src_path, fat, super_block, data_blocks, &(super_block->root));
+    int32_t ret = fill_jfs_image(src_path, fat, sb, data_blocks, &(sb->root), NULL);
     if (0 != ret)
     {
         printf("Image cannot be created, see comments above!\n");
@@ -97,53 +101,20 @@ int create_jfs_image(char *name, char *inst_name, char *src_path, uint32_t block
         return -1;
     }
 
-    explore_image(jfs_get_root_dir(super_block), super_block);
+    explore_image(jfs_get_root_dir(sb), sb);
 
-    //printf("System data size: %d\nJSuper block size: %d\n", system_data_size, sizeof(struct JSuper));
+    /*printf("\n\n");
+    struct JFile *subdir;
+    jfs_read_dir(jfs_get_root_dir(sb), sb, 4, &subdir);
+    jfs_resize_file(subdir, sb, 330);
+    explore_image(subdir, sb);*/
+
+    printf("System data size: %d, JSuper block size: %d, JFile size: %d\n", system_data_size, sizeof(struct JSuper), sizeof(struct JFile));
     //hexdump(system_data, system_data_size);
 
     free(system_data);
     fclose(jfs_image);
     return 0;
-}
-
-void explore_image(struct JFile *file, struct JSuper *sb)
-{
-    if (file->flags)
-    {
-        struct JFile *subdir;
-        int32_t offset = 0;
-        while (!jfs_read_dir(file, sb, offset, &subdir) && NULL != subdir)
-        {
-            printf("Name: %s, offset: %d, type: %d, size: %d\n", subdir->name, offset, subdir->flags, subdir->size);
-            explore_image(subdir, sb);
-            offset++;
-        }
-    }
-    else
-    {
-        uint8_t *read_data = malloc(file->size);
-        if (NULL == read_data)
-        {
-            printf("Cant't read file!\n");
-            return;
-        }
-        uint32_t read_count = 0;
-        jfs_read_file(file, sb, 0, read_data, file->size, &read_count);
-        if (0 == read_count)
-        {
-            printf("Nothing was read!\n");
-        }
-        else
-        {
-            for (int32_t ii = 0; ii < file->size; ii++)
-                printf("%c", read_data[ii]);
-            printf("\n");
-        }
-        free(read_data);
-    }
-
-    return;
 }
 
 //TODO: Check unique, check correctness
@@ -193,15 +164,12 @@ int32_t write_file_name(char *path, struct JFile *meta)
     return 0;
 }
 
-int fill_jfs_image(char *path, int32_t *fat, struct JSuper *sb, uint8_t *data, struct JFile *meta)
+int fill_jfs_image(char *path, int32_t *fat, struct JSuper *sb, uint8_t *data, struct JFile *meta, struct JCoord *parent)
 {
     ///init metadata
     meta->size = 0;
     meta->first_data_block_idx = -1;
     meta->flags = 1;
-
-    //for debug
-    //int32_t fat[BLOCKS_CNT] = (int32_t *)(sb+1);
 
     int32_t ret = write_file_name(path, meta);
     if (ret < 0)
@@ -252,7 +220,7 @@ int fill_jfs_image(char *path, int32_t *fat, struct JSuper *sb, uint8_t *data, s
             printf("handle dir:  '%s'\n", newp);
             struct JFile *new_dir = jfs_create_file(meta, sb, NULL, 1); //name will be filled later
             if (new_dir != NULL)
-                ret = fill_jfs_image(newp, fat, sb, data, new_dir);
+                ret = fill_jfs_image(newp, fat, sb, data, new_dir, &(meta->coord));
             if (NULL == new_dir || 0 != ret)
             {
                 printf("Can't create new directory!\n");
@@ -307,6 +275,47 @@ int fill_jfs_image(char *path, int32_t *fat, struct JSuper *sb, uint8_t *data, s
     }
     //printf("Add: %s\n", meta->name);
     return 0;
+}
+
+void explore_image(struct JFile *file, struct JSuper *sb)
+{
+    if (file->flags)
+    {
+        struct JFile *subdir;
+        int32_t offset = 0;
+        while (!jfs_read_dir(file, sb, offset, &subdir) && NULL != subdir)
+        {
+            printf("Name: %s, offset: %d, type: %d, size: %d\n", subdir->name, offset, subdir->flags, subdir->size);
+            printf("Coord: my block %d, offset %d, parent block %d, offset %d\n",
+                subdir->coord.my_jfile_block, subdir->coord.my_jfile_offset, subdir->coord.parent_jfile_block, subdir->coord.parent_jfile_offset);/**/
+            explore_image(subdir, sb);
+            offset++;
+        }
+    }
+    else
+    {
+        uint8_t *read_data = malloc(file->size);
+        if (NULL == read_data)
+        {
+            printf("Cant't read file!\n");
+            return;
+        }
+        uint32_t read_count = 0;
+        jfs_read_file(file, sb, 0, read_data, file->size, &read_count);
+        if (0 == read_count)
+        {
+            printf("Nothing was read!\n");
+        }
+        else
+        {
+            for (int32_t ii = 0; ii < file->size; ii++)
+                printf("%c", read_data[ii]);
+            printf("\n");
+        }
+        free(read_data);
+    }
+
+    return;
 }
 
 /*

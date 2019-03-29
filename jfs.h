@@ -14,6 +14,14 @@ enum JFileType
     JFS_DIR
 };
 
+struct JCoord
+{
+    int32_t my_jfile_block;
+    uint32_t my_jfile_offset;
+    int32_t parent_jfile_block;
+    uint32_t parent_jfile_offset;
+};
+
 struct JFile
 {
     char name[JFS_FILE_NAME_SIZE];
@@ -23,7 +31,7 @@ struct JFile
     //enum JFileType type; //TODO: Causes crash. Explore why
     //create_time
     //update_time
-    //int32_t parent;
+    struct JCoord coord;
 };
 
 struct JSuper
@@ -34,14 +42,6 @@ struct JSuper
     uint32_t total_bytes;
     int32_t first_free_block;
     struct JFile root;
-};
-
-struct JCoord
-{
-    int32_t my_jfile_block;
-    uint32_t my_jfile_offset;
-    int32_t parent_jfile_block;
-    uint32_t parent_jfile_offset;
 };
 
 int32_t jfs_get_free_block(int32_t *fat, struct JSuper *sb);
