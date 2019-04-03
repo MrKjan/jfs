@@ -60,7 +60,7 @@ int32_t jfs_write_file(struct JFile *file, struct JSuper *sb, uint32_t offset, u
 int32_t jfs_read_file(struct JFile *file, struct JSuper *sb, uint32_t offset, uint8_t *dst, uint32_t size, uint32_t *ret_size);
 int32_t jfs_rename_file(struct JFile *file, struct JSuper *sb, char *new_name);
 int32_t jfs_resize_file(struct JFile *file, struct JSuper *sb, uint32_t new_size);
-int32_t jfs_move_file(struct JFile *file, struct JSuper *sb, struct JFile new_parent);
+int32_t jfs_move_file(struct JFile *file, struct JSuper *sb, struct JFile *new_parent);
 int32_t jfs_remove_file(struct JFile *file, struct JSuper *sb);
 int32_t _jfs_remove_file(struct JFile *file, struct JSuper *sb, uint8_t mode); //Used in jfs_remove_file
 
