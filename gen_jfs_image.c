@@ -102,11 +102,20 @@ int create_jfs_image(char *name, char *inst_name, char *src_path, uint32_t block
     }
 
     explore_image(jfs_get_root_dir(sb), sb);
+    fat_dump(sb);
 
     printf("System data size: %d, JSuper block size: %lu, JFile size: %lu\n", system_data_size, sizeof(struct JSuper), sizeof(struct JFile));
     //hexdump(system_data, system_data_size);
 
-    for (int ii = 0; ii < 6; ii++)
+    printf("\n------------------------------------------\n\n");
+    struct JFile *file, *parent;
+    jfs_read_dir(jfs_get_root_dir(sb), sb, 2, &file);
+    jfs_read_dir(jfs_get_root_dir(sb), sb, 1, &parent);
+    jfs_move_file(file, sb, parent);
+    explore_image(jfs_get_root_dir(sb), sb);
+    fat_dump(sb);
+
+    /*for (int ii = 0; ii < 6; ii++)
     {
         printf("\n------------------------------------------\n\n");
         struct JFile *file;
@@ -115,18 +124,7 @@ int create_jfs_image(char *name, char *inst_name, char *src_path, uint32_t block
         printf("\n------------------------------------------\n\n");
         explore_image(jfs_get_root_dir(sb), sb);
         fat_dump(sb);
-    }
-
-    /*
-    printf("\n------------------------------------------\n\n");
-    struct JFile *file = jfs_get_root_dir(sb);
-    //jfs_read_dir(jfs_get_root_dir(sb), sb, 2, &file);
-    //jfs_read_dir(file, sb, 2, &file);
-    jfs_remove_file(file, sb);
-        printf("\n------------------------------------------\n\n");
-    explore_image(jfs_get_root_dir(sb), sb);
-    fat_dump(sb);
-    */
+    }*/
 
     free(system_data);
     fclose(jfs_image);
