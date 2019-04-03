@@ -16,6 +16,11 @@ void jfs_return_free_block(struct JSuper *sb, int32_t free_block)
 {
     int32_t *fat = jfs_get_fat_ptr(sb);
 
+    if (free_block < 0)
+    {
+        return;
+    }
+
     fat[free_block] = sb->first_free_block;
     sb->first_free_block = free_block;
 }
@@ -383,14 +388,146 @@ int32_t jfs_rename_file(struct JFile *file, struct JSuper *sb, char *new_name)
     return 0;
 }
 
+int32_t jfs_move_file(struct JFile *file, struct JSuper *sb, struct JFile new_parent)
+{
+    //TODO
+    return 0;
+}
+
+int32_t jfs_remove_file(struct JFile *file, struct JSuper *sb)
+{
+    if (file == &(sb->root) || file->coord.my_jfile_block == -1) ///Is root
+        return _jfs_remove_file(file, sb, 0);
+    else
+        return _jfs_remove_file(file, sb, 1);
+}
+
+///Mode = 0 - dont replase with last, mode = 1 - replace
+int32_t _jfs_remove_file(struct JFile *file, struct JSuper *sb, uint8_t mode)
+{
+    printf("free %s\n", file->name);
+
+    int32_t *fat = jfs_get_fat_ptr(sb);
+
+    if (jfs_is_dir(file)) ///Remove directory content
+    {
+        int32_t block = file->first_data_block_idx;
+        struct JFile *to_remove = (struct JFile *)jfs_block_idx_to_ptr(block, sb);
+        while (0 != file->size)
+        {
+            file->size--;
+            _jfs_remove_file(to_remove, sb, 0);
+            if ((struct JFile *)to_remove - (struct JFile *)jfs_block_idx_to_ptr(block, sb) == jfs_files_fit_in_block(sb) - 1 || ///Last in block
+                0 == file->size) ///Or last in parent directory
+            {
+                int32_t that_block = block;
+                block = fat[block];
+                to_remove = (struct JFile *)jfs_block_idx_to_ptr(block, sb);
+                jfs_return_free_block(sb, that_block);
+            }
+            else
+            {
+                to_remove++;
+            }
+        }
+    }
+    else ///Remove file content
+    {
+        for (int32_t block = file->first_data_block_idx; block != -1; )
+        {
+            int32_t block_next = fat[block];
+            jfs_return_free_block(sb, block);
+            block = block_next;
+        }
+    }
+
+    ///Remove JFile object
+    if (mode)
+    {
+        struct JFile *parent;
+
+        if (-1 == file->coord.parent_jfile_block)
+        {
+            parent = &(sb->root);
+        }
+        else
+        {
+            parent = (struct JFile *) (jfs_get_data_ptr(sb) +
+                     sb->block_size * file->coord.parent_jfile_block +
+                     sizeof(struct JFile) * file->coord.parent_jfile_offset);
+        }
+
+        parent->size--; //Where?..
+        printf("Parent: %s\n", parent->name);
+
+        int32_t block = parent->first_data_block_idx;
+        int32_t penult_block = -1;
+        while (-1 != fat[block]) ///Reach last parent's block
+        {
+            penult_block = block;
+            block = fat[block];
+        }
+
+        struct JFile *last_parents_fobj =
+            (struct JFile *)jfs_block_idx_to_ptr(block, sb) + (parent->size % jfs_files_fit_in_block(sb)); ///p->size is already decreased
+
+        if (last_parents_fobj != file) ///Move last fobj to cur's place
+        {
+            struct JCoord jc_file;
+            memcpy(&jc_file, &(file->coord), sizeof(struct JCoord));
+            memcpy(file, last_parents_fobj, sizeof(struct JFile));
+            memcpy(&(file->coord), &jc_file, sizeof(struct JCoord));
+            if (jfs_is_dir(file)) ///Update child's coord.parent_*
+            {
+                int32_t block = file->first_data_block_idx;
+                struct JFile *to_update = (struct JFile *)jfs_block_idx_to_ptr(block, sb);
+                uint32_t size = file->size;
+
+                while (0 != size)
+                {
+                    size--;
+                    to_update->coord.parent_jfile_block = jc_file.my_jfile_block;
+                    to_update->coord.parent_jfile_offset = jc_file.my_jfile_offset;
+
+                    if ((struct JFile *)to_update - (struct JFile *)jfs_block_idx_to_ptr(block, sb) == jfs_files_fit_in_block(sb) - 1) ///Last in block
+                    {
+                        block = fat[block];
+                        to_update = (struct JFile *)jfs_block_idx_to_ptr(block, sb);
+                    }
+                    else
+                    {
+                        to_update++;
+                    }
+                }
+            }
+        }
+
+        if ((void *)last_parents_fobj == (void *)jfs_block_idx_to_ptr(block, sb)) ///Last fobj is 1st in block
+        {
+            if (0 > penult_block)
+            {
+                parent->first_data_block_idx = -1;
+            }
+            else
+            {
+                fat[penult_block] = -1;
+            }
+
+            jfs_return_free_block(sb, block);
+        }
+    }
+
+    return 0;
+}
+
 //TODO: should be implemented other way, if another flags fill appear
-int8_t jfs_is_dir(struct JFile *file)
+inline int8_t jfs_is_dir(struct JFile *file)
 {
     return file->flags;
 }
 
 //TODO: should be implemented other way, if another flags fill appear
-int8_t jfs_is_file(struct JFile *file)
+inline int8_t jfs_is_file(struct JFile *file)
 {
     return !file->flags;
 }

@@ -24,5 +24,6 @@ uint32_t files_of_dir(char *name);
 int fill_jfs_image(char *path, int32_t *fat, struct JSuper *sb, uint8_t *data, struct JFile *meta, struct JCoord *parent);
 int32_t write_file_name(char *path, struct JFile *meta);
 void explore_image(struct JFile *dir, struct JSuper *sb);
+void fat_dump(struct JSuper *sb);
 #endif
 
